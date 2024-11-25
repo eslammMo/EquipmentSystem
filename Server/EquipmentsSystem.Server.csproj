@@ -1,0 +1,83 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+	<PropertyGroup>
+		<TargetFramework>net6.0</TargetFramework>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+	</PropertyGroup>
+
+	<PropertyGroup>
+		<TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<Content Remove="wwwroot\Reports\Equipment.Designer.cs" />
+		<Content Remove="wwwroot\Reports\Equipment.xsd" />
+		<Content Remove="wwwroot\Reports\InServiceHospital.xsc" />
+		<Content Remove="wwwroot\Reports\InServiceHospital.xss" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<Compile Include="wwwroot\Reports\Equipment.Designer.cs">
+			<DesignTime>True</DesignTime>
+			<AutoGen>True</AutoGen>
+			<DependentUpon>Equipment.xsd</DependentUpon>
+		</Compile>
+	</ItemGroup>
+	<PropertyGroup>
+		<ApplicationIcon>Resources\Icons\favicon.ico</ApplicationIcon>
+	</PropertyGroup>
+
+
+	<ItemGroup>
+		<PackageReference Include="AspNetCore.Reporting" Version="2.1.0" />
+		<PackageReference Include="BlazorDownloadFileFast" Version="0.2.0" />
+		<PackageReference Include="Downloader" Version="3.2.1" />
+		<PackageReference Include="FileDownloader" Version="1.2.0" />
+		<PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="6.0.9" />
+		<PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.Server" Version="6.0.9" />
+		<PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="6.0.9" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore" Version="6.0.9" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="6.0.9">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="6.0.9" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="6.0.9" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="6.0.9">
+			<PrivateAssets>all</PrivateAssets>
+			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
+		<PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
+		<PackageReference Include="ReportViewerCore.NETCore" Version="15.1.17" />
+		<PackageReference Include="Swashbuckle" Version="5.6.0" />
+		<PackageReference Include="Swashbuckle.AspNetCore" Version="6.4.0" />
+		<PackageReference Include="Swashbuckle.AspNetCore.Swagger" Version="6.4.0" />
+		<PackageReference Include="Swashbuckle.AspNetCore.SwaggerGen" Version="6.4.0" />
+		<PackageReference Include="Swashbuckle.AspNetCore.SwaggerUI" Version="6.4.0" />
+		<PackageReference Include="Syncfusion.Blazor.RichTextEditor" Version="22.2.5" />
+		<PackageReference Include="Syncfusion.Blazor.Themes" Version="22.2.5" />
+		<PackageReference Include="System.CodeDom" Version="6.0.0" />
+		<PackageReference Include="System.Data.SqlClient" Version="4.8.3" />
+		<PackageReference Include="System.IO.FileSystem.Primitives" Version="4.3.0" />
+
+
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\Client\EquipmentsSystem.Client.csproj" />
+		<ProjectReference Include="..\Shared\EquipmentsSystem.Shared.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<None Include="wwwroot\Reports\Equipment.xsc" />
+		<None Include="wwwroot\Reports\Equipment.xsd">
+			<SubType>Designer</SubType>
+			<LastGenOutput>Equipment.Designer.cs</LastGenOutput>
+			<Generator>MSDataSetGenerator</Generator>
+		</None>
+		<None Include="wwwroot\Reports\Equipment.xss" />
+	</ItemGroup>
+
+
+</Project>

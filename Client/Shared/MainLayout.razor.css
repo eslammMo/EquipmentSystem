@@ -1,0 +1,95 @@
+.page {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+}
+
+main {
+    flex: 1;
+}
+
+.sidebar {
+    background-image: linear-gradient(180deg, rgb(5, 39, 103) 0%, #3a0647 70%);
+}
+
+.top-row {
+    background-color: #f7f7f7;
+    border-bottom: 1px solid #d6d5d5;
+    justify-content: flex-end;
+    height: 3.5rem;
+    display: flex;
+    align-items: center;
+}
+
+    .top-row ::deep a, .top-row ::deep .btn-link {
+        white-space: nowrap;
+        margin-left: 1.5rem;
+        text-decoration: none;
+    }
+
+    .top-row ::deep a:hover, .top-row ::deep .btn-link:hover {
+        text-decoration: underline;
+    }
+
+    .top-row ::deep a:first-child {
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+@media (max-width: 640.98px) {
+    .top-row:not(.auth) {
+        display: none;
+    }
+
+    .top-row.auth {
+        justify-content: space-between;
+    }
+
+    .top-row ::deep a, .top-row ::deep .btn-link {
+        margin-left: 0;
+    }
+}
+
+@media (min-width: 641px) {
+    .page {
+        flex-direction: row;
+    }
+
+    .sidebar {
+        background-image: linear-gradient(180deg, rgb(5, 39, 103) 0%, #3a0647 70%);
+        width: 250px; /* Set width here if needed */
+        height: 100vh; /* Ensure it takes full viewport height */
+        position: fixed; /* Fixed to the left side */
+        top: 0;
+        z-index: 1000; /* Keeps the sidebar above content */
+    }
+
+    main {
+        order: 1; /* Ensure main content is first */
+        flex: 1; /* Allow main to take remaining space */
+    }
+    .top-row {
+        position: sticky;
+        top: 0;
+        z-index: 1;
+    }
+
+    .top-row.auth ::deep a:first-child {
+        flex: 1;
+        text-align: right;
+        width: 0;
+    }
+
+    .top-row, article {
+        padding-left: 2rem !important;
+        padding-right: 1.5rem !important;
+    }
+    .content {
+        margin-right: 250px; /* Push content to the right to avoid overlapping with the sidebar */
+        padding: 20px; /* Optional: add padding to the content */
+        background-color: #f4f4f4; /* Optional: Set a background color for content */
+        height: 100vh; /* Ensure content fills full viewport height */
+        overflow: auto; /* Allow scrolling if content exceeds the height */
+    }
+
+}

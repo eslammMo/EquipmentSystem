@@ -1,0 +1,63 @@
+﻿@using EquipmentsSystem.Client.Services.AuthService
+@using EquipmentsSystem.Client.Services.EquipmentService
+@using EquipmentsSystem.Shared.Models
+@using Microsoft.AspNetCore.Http
+@using System.Net
+@using MudBlazor
+@inject IAuthService AuthService
+
+
+<EditForm Model="userId" OnValidSubmit="ChangePassord">
+    <DataAnnotationsValidator></DataAnnotationsValidator>
+    <MudDialog>
+        <TitleContent>
+            <MudText Typo="Typo.h6">
+                <MudIcon Icon="@Icons.Filled.HideSource" Class="mr-3 mb-n1" />
+                حذف حساب
+            </MudText>
+        </TitleContent>
+        <DialogContent>
+            <MudText Typo="Typo.h6">
+                التأكيد علي حذف الحساب 
+            </MudText>
+        </DialogContent>
+        <DialogActions>
+            <MudButton Size="Size.Small" StartIcon="@Icons.Material.Filled.Cancel" Variant="Variant.Filled" Color="Color.Dark" ButtonType="ButtonType.Button" Class="m-1" OnClick="Cancel">الغاء</MudButton>
+            <MudButton Variant="Variant.Filled"  Class="ml-auto" Size="Size.Small" ButtonType="ButtonType.Submit" Color="Color.Error">
+                تأكيد</MudButton>
+        </DialogActions>
+    </MudDialog>
+</EditForm>
+
+@code{
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+    [Inject] ISnackbar Snackbar { get; set; }
+    [Parameter] public int userId { get; set; }
+    public string password = "";
+    public string confirmPassword = "";
+
+    bool loading = true;
+    private string prompt = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        loading = false;
+    }
+
+    async Task ChangePassord()
+    {
+        var result = await AuthService.DeleteUser(userId);
+        if(result.Success)
+            Snackbar.Add("تم حذف الحشاب ", Severity.Success);
+        else
+            Snackbar.Add("حدث خطأ ما", Severity.Error);
+
+        MudDialog.Close(DialogResult.Ok("Done"));
+    }
+    void Cancel() => MudDialog.Cancel();
+}

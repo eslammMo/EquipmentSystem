@@ -1,0 +1,329 @@
+﻿@using EquipmentsSystem.Client.Services.EquipmentService
+@using EquipmentsSystem.Shared.Models
+@inject IEquipmentService EquipmentService
+@using Microsoft.AspNetCore.Http
+@using MudBlazor
+@using Type = EquipmentsSystem.Shared.Models.Type;
+
+
+
+<EditForm Model="equip" OnValidSubmit="AddEquipment">
+    <DataAnnotationsValidator></DataAnnotationsValidator>
+    <MudDialog >
+        <DialogContent>
+            <MudText Typo="Typo.h6">
+                <MudIcon Icon="@Icons.Filled.Edit" Class="mr-3 mb-n1" />
+                @cardText
+            </MudText>
+            <br />
+                <MudGrid Style="text-align:center ; justify:center"  >
+                       
+                    <MudItem md="4">
+                    <MudSelect T="Type" Variant="Variant.Outlined" Label="نوع المعده" @bind-Value="TypeListSelect">
+                                            @foreach (var type in typesList)
+                                            {
+                                                <MudSelectItem Value="type">@type.Name</MudSelectItem>
+                                            }
+                        </MudSelect>                        
+                    </MudItem>
+                       
+                    <MudItem Style="text-align:center ;justify-content:center" md="2">
+                        <MudTooltip Text="نوع جديد">
+                            <div style="display: flex; justify-content: center; bac" class="pa-0.3 rounded-circle">
+                            <MudIconButton Icon="@Icons.Material.Filled.Add" Color="Color.Info" Edge="Edge.False" OnClick="@(()=>AddType("type"))" />
+                            </div>
+                        </MudTooltip>
+                    </MudItem>                
+                        
+                    <MudItem md="4">
+                    <MudSelect T="Model" Variant="Variant.Outlined" Label="طراز المعده" @bind-Value="ModelListSelect">
+                            @foreach (var type in ModelsList)
+                            {
+                                <MudSelectItem Value="type">@type.Name</MudSelectItem>
+                            }
+                        </MudSelect>                        
+                    </MudItem>
+                    <MudItem Style="text-align:center ;justify-content:center" md="2">
+
+                        <MudTooltip Text="طراز جديد">
+                            <div style="display: flex; justify-content: center; bac" class="pa-0.3 rounded-circle">
+                                <MudIconButton Icon="@Icons.Material.Filled.Add" Color="Color.Info" Edge="Edge.False" OnClick="@(()=>AddType("model"))" />
+                            </div>
+                        </MudTooltip>
+                    </MudItem>
+
+                @*   }
+                        else
+                        {
+                            <MudItem md="4">
+                        <MudTextField T="string" Variant="Variant.Outlined" Label="طراز المعدة" Value="ModelText" ValueChanged="ModelTextChanged" Required="IsNewModel">
+                                </MudTextField>
+                            </MudItem>
+                        } *@
+                    <MudItem md="4">
+                    <MudSelect T="Location" Variant="Variant.Outlined" Label="موقع المعده" @bind-Value="LocationListSelect">
+                                        @foreach (var type in LocationsList)
+                                        {
+                                            <MudSelectItem Value="type">@type.Name</MudSelectItem>
+                                        }
+                            </MudSelect>
+                        </MudItem>
+                    <MudItem Style="text-align:center ;justify-content:center" md="2">
+                        <MudTooltip Text="موقع جديد">
+                            <div style="display: flex; justify-content: center; bac" class="pa-0.3 rounded-circle">
+                                <MudIconButton Icon="@Icons.Material.Filled.Add" Color="Color.Info" Edge="Edge.False" OnClick="@(()=>AddType("location"))" />
+                            </div>
+                        </MudTooltip>
+                    </MudItem> 
+                <MudItem md="6">
+                    <MudSelect T="string" Variant="Variant.Outlined" Label="حالة المعده" @bind-Value="equip.Status">
+                        @foreach (var type in StatusList)
+                        {
+                            <MudSelectItem Value="type">@type</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+                    <MudItem md="6">
+                        <MudDatePicker Variant="Variant.Outlined" Label="تاريخ صرف المعده" Editable="true" @bind-Date="equip.DateOfParche"
+                        Mask="@(new DateMask("dd/MM/yyyy"))" DateFormat="dd/MM/yyyy" Placeholder="de-AT Date" />
+                    </MudItem>
+                       
+                <MudItem md="6">
+                    <MudTextField T="string" Variant="Variant.Outlined" Label="S/N" @bind-Value="equip.SerialNumber" >
+                    </MudTextField>
+                </MudItem>
+                <MudItem md="6">
+                    <MudTextField T="string" Variant="Variant.Outlined" Label="اسم المعدة" @bind-Value="equip.Name" Required>
+                    </MudTextField>
+                </MudItem>
+                <MudItem md="3">
+                    <MudNumericField Min="1" Max="100000" Label="الكمية" @bind-Value="equip.Quantity">
+                    </MudNumericField>
+                </MudItem>
+                <MudGrid>
+                <MudItem sm="12">
+                    <MudTextField   Margin="Margin.Dense" Lines="3" Variant="Variant.Outlined" Label="ملاحظات" @bind-Value="equip.Notes">
+                    </MudTextField>
+                </MudItem>
+                </MudGrid>
+             </MudGrid>
+        </DialogContent>
+        <DialogActions>
+            <MudButton Size="Size.Small" StartIcon="@Icons.Material.Filled.Cancel" Variant="Variant.Filled" Color="Color.Dark" ButtonType="ButtonType.Button" Class="m-1" OnClick="Cancel">الغاء</MudButton>
+            <MudButton Variant="Variant.Filled" Class="ml-auto" Size="Size.Small" ButtonType="ButtonType.Submit" Color="Color.Success">
+                @btnText
+            </MudButton>           
+        </DialogActions>
+    </MudDialog>
+</EditForm>
+
+@code
+{
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+    [CascadingParameter]
+    [Inject] ISnackbar Snackbar { get; set; }
+    [Parameter] public Equipment equip { get; set; } = new Equipment();
+    [Parameter] public string? Type { get; set; }
+    public Equipment originalEquip = new Equipment();
+    bool loading = true;
+    public Type TypeListSelect ;
+    public string TypeText;
+    public Model ModelListSelect ;
+    public string ModelText;
+    public Location LocationListSelect ;
+    public string StatusListSelect;
+    public string LocationText;
+    public string StatusText;
+    string cardText = "اضافة معدة";
+    string btnText = string.Empty;
+    bool readOnly = false;
+    string initalWeapon = string.Empty;
+    public List<Location> LocationsList = new List<Location>();
+    public List<Type> typesList = new List<Type>();
+    public List<Model> ModelsList = new List<Model>();
+    public bool IsNewModel = false;
+    public bool IsNewType = false;
+    public bool IsNewLocation = false;
+    public bool IsNewStatus = false;
+    private MudCheckBox<bool> NewTypeCheckRef = new MudCheckBox<bool>();
+    private MudCheckBox<bool> NewModelCheckRef = new MudCheckBox<bool>();
+    private MudCheckBox<bool> NewLocationCheckRef = new MudCheckBox<bool>();
+    private MudCheckBox<bool> NewStatusCheckRef = new MudCheckBox<bool>();
+    private List<string> StatusList = new() {"ممتازة","جيدة","مقبولة","سيئة","رديئه", };
+    [Inject]
+    IDialogService Dialog { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        Reflection.CopyProperties(equip, originalEquip);
+        await TypeListSearch();
+        await ModelListSearch();
+        await LocationListSearch();
+        StateHasChanged();
+
+    }
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Type == "Add")
+        {
+
+            equip = new Equipment();
+            btnText = "اضافة";
+            cardText = "اضافة معدة";
+        }
+        else
+        {
+            TypeListSelect = equip.Type;
+            ModelListSelect = equip.Model;
+            LocationListSelect = equip.Location;
+            btnText = "تعديل";
+            cardText = $"تعديل {equip.Name}";
+        }
+        loading = false;
+                StateHasChanged();
+    }
+    void Cancel() => MudDialog.Cancel();
+
+    private async Task<IEnumerable<Type>> TypeListSearch()
+    {
+        typesList = (await EquipmentService.GetTypes()).Data;
+        return typesList;
+    }
+
+    private async Task<IEnumerable<Model>> ModelListSearch()
+    {
+        ModelsList = (await EquipmentService.GetModels()).Data;
+        return ModelsList;
+    }
+
+    private async Task<IEnumerable<Location>> LocationListSearch()
+    {
+        LocationsList = (await EquipmentService.GetLocations()).Data;
+        return LocationsList;
+    }    
+
+    async void AddEquipment()
+    {
+
+        if (string.IsNullOrEmpty(equip.Name))
+        {
+            Snackbar.Add("يجب اضافة اسم المعده", Severity.Error);
+            return;
+        }
+        if (ModelListSelect == null)
+        {
+            Snackbar.Add("يجب اضافة طراز المعده", Severity.Error);
+            return;
+        }
+        if (LocationListSelect== null)
+        {
+            Snackbar.Add("يجب اضافة مكان تواجد المعده", Severity.Error);
+            return;
+        }
+        if (TypeListSelect== null)
+        {
+            Snackbar.Add("يجب اضافة نوع المعده", Severity.Error);
+            return;
+        }
+        equip.TypeId = TypeListSelect.Id;
+        equip.ModelId = ModelListSelect.Id;
+        equip.LocationId = LocationListSelect.Id;
+
+        if (Type == "Add")
+        {
+            var result = await EquipmentService.AddEquipment(equip);
+            if (result.Success == false)
+                Snackbar.Add("حدث خطأ ما", Severity.Error);
+            else
+            {
+                Snackbar.Add("تم اضافة المعدة", Severity.Success);
+                await TypeListSearch();
+                await ModelListSearch();
+                await LocationListSearch();
+                StateHasChanged();
+            }
+        }
+        else
+        {
+            await EquipmentService.UpdateEquipment(equip);
+            await TypeListSearch();
+            await ModelListSearch();
+            await LocationListSearch();
+            StateHasChanged();
+            Snackbar.Add("تم تعديل بيانات المعده", Severity.Success);
+        }
+    }
+
+    void NewTypeCheckChanged(bool value)
+    {
+        IsNewType = value;
+        StateHasChanged();
+    }
+    void NewModelCheckChanged(bool value)
+    {
+        IsNewModel = value;
+        StateHasChanged();
+    }
+    void NewLocationCheckChanged(bool value)
+    {
+        IsNewLocation = value;
+        StateHasChanged();
+    }
+    void NewStatusCheckChanged(bool value)
+    {
+        IsNewStatus = value;
+        StateHasChanged();
+    }
+    void TypeListChanged(Type value)
+    {
+        TypeListSelect = value;
+        StateHasChanged();
+    }
+    void TypeTextChanged(string value)
+    {
+        TypeText = value;
+        StateHasChanged();
+    }
+    void ModelListChanged(Model value)
+    {
+        ModelListSelect = value;
+        StateHasChanged();
+    }
+    void ModelTextChanged(string value)
+    {
+        ModelText = value;
+        StateHasChanged();
+    }
+    void LocationListChanged(Location value)
+    {
+        LocationListSelect = value;
+        StateHasChanged();
+    }
+    void LocationTextChanged(string value)
+    {
+        LocationText = value;
+        StateHasChanged();
+    }
+    void StatusListChanged(string value)
+    {
+        StatusListSelect = value;
+        StateHasChanged();
+    }
+    void StatusTextChanged(string value)
+    {
+        StatusText = value;
+        StateHasChanged();
+    }
+
+    private async void AddType(string title)
+    {
+        var parameters = new DialogParameters();
+        parameters.Add("Type", title);
+        var dialoglist = await Dialog.Show<AddEquipData>("Edit", parameters).GetReturnValueAsync<List<Equipment>>();
+        await TypeListSearch();
+        await ModelListSearch();
+        await LocationListSearch();
+    }
+
+}
+

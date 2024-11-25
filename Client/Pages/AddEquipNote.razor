@@ -1,0 +1,55 @@
+﻿@using EquipmentsSystem.Client.Services.EquipmentService
+@using EquipmentsSystem.Shared.Models
+@inject IEquipmentService EquipmentService
+@using Microsoft.AspNetCore.Http
+@using System.Net
+@using MudBlazor
+
+<EditForm Model="equipment.Notes" OnValidSubmit="AddOrUpdate">
+    <DataAnnotationsValidator></DataAnnotationsValidator>
+    <MudDialog>
+        <TitleContent>
+            <MudText Typo="Typo.h6">
+                <MudIcon Icon="@Icons.Filled.AddCircle" Class="mr-3 mb-n1" />
+                @cardText
+            </MudText>
+        </TitleContent>
+        <DialogContent>
+            <MudGrid>
+                <MudItem sm="12">
+                    <MudTextField Margin="Margin.Dense" Lines="15" Variant="Variant.Outlined" Label="" @bind-Value="equipment.Notes">
+                    </MudTextField>
+                </MudItem>
+            </MudGrid>
+        </DialogContent>
+        <DialogActions>
+            <MudButton ButtonType="ButtonType.Button" Class="mr-auto" OnClick="Cancel">الغاء</MudButton>
+            <MudButton ButtonType="ButtonType.Submit" Color="Color.Success">
+                @btnText
+            </MudButton>
+        </DialogActions>
+    </MudDialog>
+</EditForm>
+
+@code {
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+
+    [Parameter] public Equipment equipment { get; set; }
+    [Parameter] public string? Type { get; set; }
+    [Inject] ISnackbar Snackbar { get; set; }
+
+    string cardText = "اضافة ملاحظة لمعده";
+    string btnText = "حفظ";
+
+    protected override async Task OnParametersSetAsync()
+    {
+    }
+    void Cancel() => MudDialog.Cancel();
+
+    async void AddOrUpdate()
+    {
+        var result = await EquipmentService.UpdateEquipment(equipment);
+        Snackbar.Add("تم إضافة ملاحظة للمعده", Severity.Success);
+        MudDialog.Close();
+    }
+}

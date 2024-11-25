@@ -1,0 +1,151 @@
+﻿@using EquipmentsSystem.Client.Services.AuthService
+@using EquipmentsSystem.Client.Services.EquipmentService
+@using EquipmentsSystem.Shared.Models
+@inject IEquipmentService EquipmentService
+@using Microsoft.AspNetCore.Http
+@using MudBlazor
+@inject IAuthService AuthService
+
+
+
+
+<EditForm Model="equip" OnValidSubmit="Register">
+    <DataAnnotationsValidator></DataAnnotationsValidator>
+    <MudDialog >
+        <DialogContent>
+            <MudText Typo="Typo.h6">
+                <MudIcon Icon="@Icons.Filled.Edit" Class="mr-3 mb-n1" />
+                اضافة مستخدم
+            </MudText>
+            <br />
+                <MudGrid Style="text-align:center ; justify:center"  >
+                <MudItem md="6">
+                    <MudTextField T="string" Variant="Variant.Outlined" Label="الدرجة / الرتبة" @bind-Value="user.Rank" >
+                    </MudTextField>
+                </MudItem>
+                <MudItem md="6">
+                    <MudTextField T="string" Variant="Variant.Outlined" Label="الاسم" @bind-Value="user.DisplayName" >
+                    </MudTextField>
+                </MudItem>
+                <MudItem md="6">
+                    <MudTextField T="string" Variant="Variant.Outlined" Label="اسم المستخدم" @bind-Value="user.Email" Required>
+                    </MudTextField>
+                </MudItem>
+                    <MudItem md="6">
+                    <MudSelect T="string" Variant="Variant.Outlined" Label="الوظيفة" @bind-Value="user.Role">
+                        @foreach (var type in Roles)
+                            {
+                                <MudSelectItem Value="type">@type</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </MudItem>
+                <MudItem md="6">
+                    <MudTextField T="string" Variant="Variant.Outlined" InputType="InputType.Password" Label="كلمة السر" @bind-Value="user.Password" Required>
+                    </MudTextField>
+                </MudItem><MudItem md="6">
+                    <MudTextField T="string" Variant="Variant.Outlined" InputType="InputType.Password" Label="تأكيد كلمة السر" @bind-Value="user.ConfirmPassword" Required>
+                    </MudTextField>
+                </MudItem>
+             </MudGrid>
+        </DialogContent>
+        <DialogActions>
+            <MudButton Size="Size.Small" StartIcon="@Icons.Material.Filled.Cancel" Variant="Variant.Filled" Color="Color.Dark" ButtonType="ButtonType.Button" Class="m-1" OnClick="Cancel">الغاء</MudButton>
+            <MudButton Variant="Variant.Filled" Class="ml-auto" Size="Size.Small" ButtonType="ButtonType.Submit" Color="Color.Success">
+                اضافة
+            </MudButton>           
+        </DialogActions>
+    </MudDialog>
+</EditForm>
+
+@code
+{
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+    [CascadingParameter]
+    [Inject] ISnackbar Snackbar { get; set; }
+    [Parameter] public Equipment equip { get; set; } = new Equipment();
+    public UserRegister user { get; set; } = new UserRegister();
+    public List<string> Roles = new List<string>() { "admin", "user" };
+
+    [Parameter] public string? Type { get; set; }
+    public Equipment originalEquip = new Equipment();
+    bool loading = true;
+    public Type TypeListSelect;
+    public string TypeText;
+    public Model ModelListSelect;
+    public string ModelText;
+    public Location LocationListSelect;
+    public string StatusListSelect;
+    public string LocationText;
+    public string StatusText;
+    //public string userName;
+    string cardText = "اضافة معدة";
+    string btnText = string.Empty;
+    bool readOnly = false;
+    //string newJobCategory = string.Empty;
+    //string newSpecialization = string.Empty;
+    //string newJob = string.Empty;
+    //string newJobType = string.Empty;
+    string initalWeapon = string.Empty;
+    public List<Location> LocationsList = new List<Location>();
+    public List<Type> typesList = new List<Type>();
+    public List<Model> ModelsList = new List<Model>();
+    public bool IsNewModel = false;
+    public bool IsNewType = false;
+    public bool IsNewLocation = false;
+    public bool IsNewStatus = false;
+    private MudCheckBox<bool> NewTypeCheckRef = new MudCheckBox<bool>();
+    private MudCheckBox<bool> NewModelCheckRef = new MudCheckBox<bool>();
+    private MudCheckBox<bool> NewLocationCheckRef = new MudCheckBox<bool>();
+    private MudCheckBox<bool> NewStatusCheckRef = new MudCheckBox<bool>();
+    private List<string> StatusList = new() {"ممتازة","جيدة","مقبولة","سيئة","رديئه", };
+    [Inject]
+    IDialogService Dialog { get; set; }
+
+    //private MudTextField<string> personNameField = new MudTextField<string>();
+    //private MudSelect<string> personUnitOptions = new MudSelect<string>();
+    //private MudSelect<string> DiagnosesTypeOptions = new MudSelect<string>();
+
+    protected override async Task OnInitializedAsync()
+    {
+    }
+    protected override async Task OnParametersSetAsync()
+    {
+        ////Snackbar.Add("Entered", Severity.Error);
+        //var authState = await authenticationStateTask;
+        //var user = authState.User;
+        //userName = user.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Name).Value;
+        //userRole = user.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role).Value;
+        //userUnit = user.Claims.FirstOrDefault(c => c.Type == "Unit").Value;
+        //initalWeapon = soldier.Weapon;
+        loading = false;
+        StateHasChanged();
+    }
+    void Cancel() => MudDialog.Cancel();
+
+    async void Register()
+    {       
+        if (string.IsNullOrEmpty(user.Email))
+        {
+            Snackbar.Add("يجب اضافة اسم مستخدم", Severity.Error);
+            return;
+        }
+        if (string.IsNullOrEmpty(user.Password))
+        {
+            Snackbar.Add("يجب ادخال كلمة مرور ", Severity.Error);
+            return;
+        }
+        if (user.Password != user.ConfirmPassword)
+        {
+            Snackbar.Add("كلمة السر غير متطابقة ", Severity.Error);
+            return;
+        }
+        var result = await AuthService.Register(user);
+        if(result.Success)
+            Snackbar.Add("تم اضافة الحساب", Severity.Error);
+        else
+            Snackbar.Add("حدث خطأ ما", Severity.Error);
+
+
+    }
+}
+

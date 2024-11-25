@@ -1,0 +1,120 @@
+﻿@using EquipmentsSystem.Client.Services.EquipmentService
+@using EquipmentsSystem.Client.Services.ReportService
+@using EquipmentsSystem.Shared.Models
+@inject IEquipmentService EquipmentService
+@inject IReportService ReportService
+@using Microsoft.JSInterop;
+@using Microsoft.AspNetCore.Http
+@using System.Net
+@using MudBlazor
+@using FileDownloader
+@using Blazor.DownloadFileFast.Interfaces
+@* @inject Downloader downloader
+ *@
+<EditForm Model="reportitems" OnValidSubmit="Print">
+    <DataAnnotationsValidator></DataAnnotationsValidator>
+    <MudDialog>
+        <TitleContent>
+            <MudText Typo="Typo.h6">
+                <MudIcon Size="Size.Large" Color="Color.Error" Icon="@Icons.Material.Filled.PictureAsPdf" Class="mr-3 mb-n1" />
+                طباعة بيان
+            </MudText>
+        </TitleContent>
+        <DialogContent>
+            <MudItem >
+                <MudTextField T="string" Variant="Variant.Outlined" Label="العنوان" @bind-Value="Title" >
+                </MudTextField>
+                <MudSpacer/>
+                <MudItem md="12">
+                    <MudCheckBox Color="Color.Success" UnCheckedColor="Color.Dark" CheckedIcon="@Icons.Material.Filled.FlashlightOn" UncheckedIcon="@Icons.Material.Filled.FlashlightOff"
+                    Label="اضافة شعار" T="bool" CheckedChanged="value => FlagCheckChanged(value)" Dense="true"></MudCheckBox>
+                </MudItem>
+            </MudItem>
+        </DialogContent>
+        <DialogActions>
+            <MudButton Size="Size.Small" StartIcon="@Icons.Material.Filled.Cancel" Variant="Variant.Filled" Color="Color.Dark" ButtonType="ButtonType.Button" Class="m-1" OnClick="Cancel" Disabled="@_processing">الغاء</MudButton>
+            <MudButton Variant="Variant.Filled" Class="ml-auto" Size="Size.Small" ButtonType="ButtonType.Submit" Color="Color.Success" Disabled="@_processing">
+                تأكيد</MudButton>
+        </DialogActions>
+    </MudDialog>
+</EditForm>
+
+@code{
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+    [Parameter]
+    public ReportItems reportitems { get; set; }
+    [Parameter]
+    public ReportItemsMultiple reportItemsMultiple { get; set; }
+    public string Title { get; set; } = "";
+    [Parameter]
+    public bool IsMultiple { get; set; } = false;
+    [Inject] IJSRuntime JS { get; set; }
+    [Inject] ISnackbar Snackbar { get; set; }
+    public bool HaveFlag =false ;
+
+
+
+    private bool _processing = false;
+    public string prompt = "";
+
+    void Cancel() => MudDialog.Cancel();
+
+
+    protected override async Task OnInitializedAsync()
+    {
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        prompt = "اضافة عنون للطباعة ؟";
+        _processing = false;
+    }
+
+    // async void Print()
+    // {
+    //     _processing = true;
+
+    //         reportitems.parameters.Add("Title", Title);
+    //         var arnb = await ReportService.GetReport(reportitems);
+    //         // await downloader.DownloadFromStream(arnb, reportitems.ReportName + ".pdf");
+
+    //     _processing = false;
+    //     MudDialog.Close(DialogResult.Ok(reportitems));
+    // }
+
+    void FlagCheckChanged(bool value)
+    {
+        HaveFlag = value;
+    }
+    async Task Print()
+    {
+        _processing = true;
+        try
+        {
+            reportitems.parameters.Add("Title", Title);
+            if (HaveFlag == true)
+                reportitems.parameters.Add("CanViewFlag", "True");
+            var arnb = await ReportService.GetReport(reportitems);
+
+            // Convert stream to byte array
+            byte[] fileBytes = arnb;
+
+            // Convert byte array to base64
+            var base64File = Convert.ToBase64String(fileBytes);
+
+            // Invoke the JavaScript function
+            await JS.InvokeVoidAsync("downloadFile", reportitems.ReportName + ".pdf", base64File);
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error during report generation: {ex.Message}");
+            Snackbar.Add("حدث خطأ ما", Severity.Error);
+        }
+        finally
+        {
+            _processing = false;
+            MudDialog.Close(DialogResult.Ok(reportitems));
+        }
+    }
+
+}

@@ -1,0 +1,259 @@
+﻿@attribute [Authorize(Roles = "SuperAdmin")]
+@inject MudBlazor.ISnackbar snackbar 
+@using EquipmentsSystem.Client.Services.AuthService
+@using EquipmentsSystem.Client.Services.EquipmentService
+@using EquipmentsSystem.Shared.Models
+@inject IAuthService AuthService
+@*@inject IDialogService Dialog
+*@@using System.Net.Http.Headers
+@using Microsoft.AspNetCore.Http
+@using System.Net
+@using MudBlazor
+@using System.Security.Claims
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+@page "/users"
+
+<style>
+    /* Alternating row colors */
+    .mud-table-row:nth-child(odd) {
+        background-color: #f5f5f5; /* Light gray for odd rows */
+    }
+
+    .mud-table-row:nth-child(even) {
+        background-color: rgb(178, 152, 204) /* Much Lighter Version */
+        /* Lightened version */
+    }   
+    /* Light Gold Hover Effect for MudTable Rows */
+
+    .mud-table-row:hover {
+        background-color: rgb(255, 223, 120) !important; /* Light Gold */
+        transition: background-color 0.3s ease; /* Smooth transition for color change */
+    }
+
+
+</style>
+<MudTable T="UserView"  Class="mt-2" @ref="mudTable" CanCancelEdit="true" ServerData="@(new Func<TableState, Task<TableData<UserView>>>(LoadData))"
+          @bind-SelectedItem="selectedItem1" 
+          Dense="true" Striped="true" Hover="true" Bordered="true" HeaderClass="table-head-bordered" 
+          Loading="@_loading" LoadingProgressColor="Color.Secondary"
+          CancelEditIcon="@Icons.Material.Filled.Cancel"    CancelEditTooltip="الغاء" CommitEditIcon="@Icons.Material.Filled.Save"
+          CommitEditTooltip="تعديل" RowEditPreview="BackupItem" RowEditCancel="ResetItemToOriginalValues"
+          RowEditCommit="ItemHasBeenCommitted" IsEditRowSwitchingBlocked="true" >
+
+    <ToolBarContent>
+        <MudText Typo="Typo.h6"  Style="font:bold">المستخدمين</MudText>
+        <MudSpacer />
+            <MudButton Size="Size.Small" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Add" Color="Color.Success" @onclick="AddEquip">اضافة</MudButton>
+     @*    @if (userRole != "UnitUser")
+        {
+            <MudButton Class="m-1" Size="Size.Small" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Print" Color="Color.Dark" @onclick="Print">طباعة</MudButton>
+        }
+         *@
+      @*   <MudButton Class="m-1" Size="Size.Small" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.PictureAsPdf" Color="Color.Error" @onclick="Print">طباعة</MudButton> *@
+    </ToolBarContent>
+
+    <HeaderContent>
+        <MudTh Style="text-align: center; font-size:larger"><strong>الاسم</strong></MudTh>
+        <MudTh Style="text-align: center; font-size:larger"><strong>اسم المستخدم</strong></MudTh>
+        <MudTh Style="text-align: center; font-size:larger"><strong>الدرجه / الرتبة</strong></MudTh>
+        <MudTh Style="text-align: center; font-size:larger"><strong>الوظيفة</strong></MudTh>
+        <MudTh Style="text-align: center; font-size:larger"><strong>اجراءات</strong></MudTh>
+    </HeaderContent>
+
+    <RowTemplate>
+        <MudTd Style="text-align: center;" DataLabel="الاسم"><strong>@context.DisplayName</strong></MudTd>
+        <MudTd Style="text-align: center;" DataLabel="اسم المستخدم"><strong>@context.Email</strong></MudTd>
+        <MudTd Style="text-align: center;" DataLabel="الدرجه / الرتبة"><strong>@context.Rank</strong></MudTd>
+        <MudTd Style="text-align: center;" DataLabel="الوظيفة"><strong>@context.Role</strong></MudTd>
+        <MudTd Style="text-align: center;" DataLabel="اجراءات">
+            <MudTooltip Text="الحذف">
+                <div style="display: flex; justify-content: center;" class="pa-0.3 rounded-circle">
+                    <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Edge="Edge.False" OnClick="@(()=>Delete(context))" />
+                </div>
+            </MudTooltip> 
+            <MudTooltip Text="تغير كلمة السر">
+                <div style="display: flex; justify-content: center;" class="pa-0.3 rounded-circle">
+                    <MudIconButton Icon="@Icons.Material.Filled.Password" Color="Color.Info" Edge="Edge.False" OnClick="@(()=>ChangePassword(context))" />
+                </div>
+            </MudTooltip>
+        </MudTd>
+    </RowTemplate>
+    <RowEditingTemplate  >
+        <MudTd Style="text-align: center;">
+            <MudTextField T="string" @bind-Value="context.DisplayName" Label="الاسم" Required="true" Immediate="true" />
+        </MudTd>
+        <MudTd Style="text-align: center;">
+            <MudTextField T="string" @bind-Value="context.Email" Label="اسم المستخدم" Required="true" Immediate="true" />
+        </MudTd>
+        <MudTd Style="text-align: center;">
+            <MudTextField T="string" @bind-Value="context.Rank" Label="الدرجة / الرتبة" Immediate="true" />
+        </MudTd>
+        <MudTd Style="text-align: center;">
+            <MudSelect T="string" @bind-Value="context.Role" Label="الوظيفة">
+                <MudSelectItem T="string" Value="@Roles[0]">@Roles[0]</MudSelectItem>
+                <MudSelectItem T="string" Value="@Roles[1]">@Roles[1]</MudSelectItem>
+            </MudSelect>
+        </MudTd>
+         @*<MudTd Style="text-align: center;">
+            <MudTooltip Text="حفظ">
+                <MudIconButton Icon="@Icons.Material.Filled.Save" Color="Color.Success" OnClick="@(()=>SaveRow(context))" />
+            </MudTooltip>
+            <MudTooltip Text="إلغاء">
+                <MudIconButton Icon="@Icons.Material.Filled.Cancel" Color="Color.Error" OnClick="@(()=>CancelEdit(context))" />
+            </MudTooltip>
+        </MudTd>*@
+    </RowEditingTemplate>
+        <PagerContent>
+    <MudTablePager />
+    </PagerContent>
+</MudTable>
+
+@code
+{
+    private MudTable<UserView> mudTable;
+    public string? sortDirection = "ASC";
+    public string? sortBy = null;
+    public string? Type = null;
+    public string? Model = null;
+    public string? SN = null;
+    public string? Name = null;
+    public string? DOPRange = null;
+    public string? Location = null;
+    public string? Status = null;
+    public int? minQuantity = null;
+    public int? maxQuantity = null;
+    public int? count;
+    private bool _loading = true;
+    private DateRange? dateRange;
+    private MudDateRangePicker DOPSelect;  // Reference to the MudDateRangePicker component
+    private List<string> StatusList = new() { "ممتازة", "جيدة", "مقبولة", "سيئة", "رديئه", };
+    public int? pagesize = 0;
+    public List<string> Roles = new List<string>() { "admin","user"};
+
+    string displayName = "";
+    string Rank = "";
+    private string? role;
+    private string? _rank;
+    string displayUser = "";
+
+    private ClaimsPrincipal _user;
+
+
+    [Inject] ISnackbar Snackbar { get; set; }
+    [Inject]
+    IDialogService Dialog { get; set; }
+    private HashSet<UserView> selectedItems1 = new HashSet<UserView>();
+    private UserView selectedItem1 = new UserView();
+    public UserView elementBeforeEdit = new UserView();
+    DialogOptions customDialogOptions2 = new DialogOptions()
+        {
+            MaxWidth = MaxWidth.Large,
+            FullWidth = true,
+            DisableBackdropClick = true,
+            NoHeader = true
+        };
+    DialogOptions customDialogOptions = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true, NoHeader = true };
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        _user = authState.User;
+
+        if (_user.Identity != null && _user.Identity.IsAuthenticated)
+        {
+            displayName = _user.Identity.Name; // Get username
+            Rank = _user.Claims.FirstOrDefault(c => c.Type == "Rank")?.Value; // Get username
+            role = _user.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
+        }
+    }
+
+    public async Task<TableData<UserView>> LoadData(TableState state)
+    {
+        var response = await AuthService.GetUsers(
+            currentPageNumber: (state.Page + 1),
+            pageSize: state.PageSize,
+            email:""
+        );
+        pagesize = state.PageSize;
+        count = response.TotalRecords;
+        InvokeAsync(() =>
+        {
+            StateHasChanged();
+        });
+        _loading = false;
+        return new TableData<UserView>() { Items = response.Data, TotalItems = response.TotalRecords };
+    }
+
+    private async void RowClickEvent(TableRowClickEventArgs<UserView> tableRowClickEventArgs)
+    {
+        var parameters = new DialogParameters();
+        parameters.Add("equip", selectedItem1);
+        var dialog = Dialog.Show<EditEquip>("Edit", parameters, customDialogOptions);
+        var result = await dialog.Result;
+        if (!result.Cancelled)
+        {
+        }
+        StateHasChanged();
+        await mudTable.ReloadServerData();
+    }
+
+    async Task AddEquip()
+    {
+        var parameters = new DialogParameters();
+        var dialog = Dialog.Show<AddUser>("Add", parameters, customDialogOptions);
+        var result = await dialog.Result;
+
+        StateHasChanged();
+        await mudTable.ReloadServerData();
+    }
+    private async void Delete(UserView obj)
+    {
+        if (!string.IsNullOrEmpty(obj.Role) && obj.Role == "SuperAdmin")
+        {
+            Snackbar.Add("لا يمكن حذف هذا الحساب", Severity.Error);
+            return;
+        }
+        
+        var parameters = new DialogParameters();
+        parameters.Add("userId", obj.Id);
+        var dialoglist = await Dialog.Show<DeleteUserDialog>("Edit", parameters).GetReturnValueAsync<List<Equipment>>();
+        mudTable.ReloadServerData();
+        StateHasChanged();
+    }   
+    private async void ChangePassword(UserView obj)
+    {
+        var parameters = new DialogParameters();
+        parameters.Add("userId", obj.Id);
+        var dialoglist = await Dialog.Show<ChangePasswordDialog>("Edit", parameters).GetReturnValueAsync<List<Equipment>>();
+        mudTable.ReloadServerData();
+        StateHasChanged();
+    }
+    async void SaveRow(UserView context)
+    {
+        await  AuthService.UpdateUser(context);
+        Snackbar.Add("تم حفظ التعديلات بنجاح", Severity.Success);
+    }
+
+    void CancelEdit(object context)
+    {
+        // Logic to discard changes (e.g., reset to original state)
+        Snackbar.Add("تم إلغاء التعديلات", Severity.Info);
+    }
+
+    private void BackupItem(object element)
+    {
+        Reflection.CopyProperties(element, elementBeforeEdit);
+    }
+
+    private async void ItemHasBeenCommitted(object element)
+    {
+        await AuthService.UpdateUser((UserView)element);
+    }
+
+    private void ResetItemToOriginalValues(object element)
+    {
+        Reflection.CopyProperties(elementBeforeEdit, element);
+    }
+
+}
+

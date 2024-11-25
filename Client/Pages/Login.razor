@@ -1,0 +1,243 @@
+﻿@using System.ComponentModel.DataAnnotations
+@using Blazored.LocalStorage
+@using EquipmentsSystem.Client.Services.AuthService
+@using EquipmentsSystem.Shared.Models
+@using Microsoft.AspNetCore.Components.Authorization
+
+
+@inject IAuthService AuthService
+@inject ILocalStorageService LocalStorage
+@inject NavigationManager NavigationManager
+@inject IDialogService Dialog
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject ISnackbar Snackbar
+<style>
+
+
+.bg-image {
+    height: 100vh;
+    background: url('/background.jpg') no-repeat center center fixed;
+    background-size: cover;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    filter: blur(3px); /* Reduced blur effect */
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+}
+
+.bg-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(255, 255, 255, 0.6); /* Light overlay for smoother effect */
+    z-index: -1; /* Place behind content */
+}
+
+    /* Position text in the middle of the page/image */
+    .bg-text {
+
+        color: white;
+        font-weight: bold;
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 2;
+        width: 80%;
+        padding: 20px;
+        text-align: center;
+        place-items: center!important; /* Center both horizontally and vertically */
+    }
+/*     body {
+        background: url('/images/background.jpg') no-repeat center center fixed;
+        background-size: cover;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    } */
+    .mt-4 {
+        margin-top: 1rem;
+    }
+
+    .pa-4 {
+        padding: 1rem;
+    }
+
+/*     .login-container {
+        background: #f9f9f9;
+        border-radius: 12px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        font-family: Arial, sans-serif;
+        max-width: 400px;
+        margin: 2rem auto;
+        padding: 2rem;
+    } */
+
+    .login-container {
+        background: rgba(249, 249, 249, 0.4); /* More transparent light grey */
+        border-radius: 12px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        font-family: Arial, sans-serif;
+        max-width: 400px;
+        margin: 2rem auto;
+        padding: 2rem;
+        font-weight: bold; /* Make text bold */
+    }
+
+
+
+        .login-container strong {
+            font-size: 1.1rem;
+        }
+
+    .mt-6 {
+        margin-top: 1.5rem;
+    }
+
+    .align-center {
+        display: flex;
+        align-items: center;
+    }
+
+    .justify-space-between {
+        justify-content: space-between;
+    }
+
+    .ml-auto {
+        margin-left: auto;
+    }
+
+    .ms-n1 {
+        margin-right: -0.25rem;
+    }
+
+    .ms-2 {
+        margin-left: 0.5rem;
+    }
+    .btn-error {
+        background-color: #d32f2f;
+        color: white;
+        padding: 0.75rem 1.5rem;
+        font-size: 1rem;
+        border-radius: 6px;
+        cursor: pointer;
+        border: none;
+        transition: background-color 0.3s;
+    }
+
+
+        .btn-error:hover {
+            background-color: #b71c1c;
+        }
+
+    .grid-container {
+        display: grid;
+        place-items: center; /* Center both horizontally and vertically */
+        height: 100vh; /* Full viewport height */
+
+    }
+
+    .grid-item {
+        text-align: center !important;
+        padding: 20px !important;
+        position: relative !important; /* Ensure the content is on top of the background */
+        z-index: 1 !important;
+
+    }
+</style>
+
+
+<PageTitle>Login</PageTitle>
+
+@*<h3>تسجيل الدخول</h3>
+*@
+<div class="bg-image"></div>
+<MudGrid class="grid-container bg-text" Justify="Justify.Center" AlignItems="AlignItems.Center">
+    <MudItem class="grid-item " md="12">
+        <MudPaper Class="login-container">
+            <MudForm @bind-IsValid="@success">
+                <MudItem md="12">
+                <strong>
+                    <MudTextField  @bind-Value="user.Email"
+                                  T="string" Label="اسم المستخدم" Required="true"
+                                       Margin="Margin.Dense"
+                                      Variant="Variant.Filled"
+                                      RequiredError="اسم المستخدم مطلوب!"
+                                      Style="background-color: rgba(255, 255, 255, 0.6); border-radius: 12px;" />
+                </strong>
+                </MudItem>
+                <br />
+                <MudItem md="12">
+
+                <MudTextField @bind-Value="user.Password" T="string" Label="كلمة المرور"
+                              InputType="InputType.Password"
+                              Required="true"
+                              Margin="Margin.Dense"
+                              Variant="Variant.Filled"
+                              RequiredError="كلمة المرور مطلوبة!"
+                              Style="background-color: rgba(255, 255, 255, 0.6); border-radius:12px;" />
+                </MudItem>
+
+                <div class="d-flex align-center justify-content-center mt-6">
+                    <button class="btn-error" disabled="@(_processing)" @onclick="HandleLogin">
+                        @if (_processing)
+                        {
+                            <MudProgressCircular  Size="Size.Small" Indeterminate="true" />
+                            <span class="ms-2"><strong>يتم تسجيل الدخول</strong></span>
+                        }
+                        else
+                        {
+                            <span><strong>تسجيل الدخول</strong></span>
+                        }
+                    </button>
+                </div>
+            </MudForm>
+            <MudText Style="font-size:larger ; font-weight:bolder" Typo="Typo.caption">@errorMessage</MudText>
+        </MudPaper>
+    </MudItem>
+</MudGrid>
+
+
+@code {
+
+    private UserLogin user = new UserLogin();
+    bool success;
+    private bool _processing = false;
+    private string errorMessage = string.Empty;
+    DialogOptions customDialogOptions = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true };
+    //private string returnUrl = string.Empty;
+
+    //protected override void OnInitialized()
+    //{
+    //    var uri = NavigationManager.ToAbsoluteUri(NavigationManager.Uri);
+    //    if (QueryHelpers.ParseQuery(uri.Query).TryGetValue("returnUrl", out var url))
+    //    {
+    //        returnUrl = url;
+    //    }
+    //}
+
+    private async Task HandleLogin()
+    {
+        _processing = true;
+        var result = await AuthService.Login(user);
+        //Snackbar.Add(result.Success.ToString(), Severity.Info);
+        if (result.Success)
+        {
+            errorMessage = string.Empty;
+            await LocalStorage.SetItemAsync("authToken", result.Data);
+            await AuthenticationStateProvider.GetAuthenticationStateAsync();
+            NavigationManager.NavigateTo("/", forceLoad: true);
+        }
+        else
+       
+            errorMessage = result.Message;
+            _processing = false;
+        }
+    }
+}   

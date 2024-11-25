@@ -1,0 +1,105 @@
+﻿@using EquipmentsSystem.Client.Services.EquipmentService
+@using EquipmentsSystem.Shared.Models
+@inject IEquipmentService EquipmentService
+@using Microsoft.AspNetCore.Http
+@using System.Net
+@using MudBlazor
+
+<EditForm Model="title" OnValidSubmit="Add">
+    <DataAnnotationsValidator></DataAnnotationsValidator>
+
+    <MudDialog>
+        <TitleContent>
+            <MudText Typo="Typo.h6">
+                <MudIcon Icon="@Icons.Filled.HideSource" Class="mr-3 mb-n1" />
+                @title
+            </MudText>
+        </TitleContent>
+        <DialogContent>
+        <MudTextField @bind-Value="name" Label="Enter Name" Variant="Variant.Outlined" FullWidth="true" />
+        </DialogContent>
+        <DialogActions>
+            <MudButton Size="Size.Small" StartIcon="@Icons.Material.Filled.Cancel" Variant="Variant.Filled" Color="Color.Dark" ButtonType="ButtonType.Button" Class="m-1" OnClick="Cancel">الغاء</MudButton>
+        <MudButton Size="Size.Small" StartIcon="@Icons.Material.Filled.Cancel" Variant="Variant.Filled" Color="Color.Dark" ButtonType="ButtonType.Button" Class="m-1" OnClick="Add">تأكيد</MudButton>
+        </DialogActions>
+    </MudDialog>
+</EditForm>
+
+
+@code{
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+    [Inject] ISnackbar Snackbar { get; set; }
+    [Parameter] public string? Type { get; set; }
+    bool loading = true;
+    private string prompt = string.Empty;
+    public string title = "";
+    public string name= "";
+
+    protected override async Task OnInitializedAsync()
+    {
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if(Type=="model")
+        {
+            title = "اضافة طراز";
+        }
+        else if(Type =="type")
+        {
+            title = "اضافة نوع";
+        }
+        else if(Type == "location")
+        {
+            title = "اضافة موقع معدة";
+        }
+        loading = false;
+    }
+
+    async Task Add()
+    {
+        if(string.IsNullOrEmpty(name) )
+            Snackbar.Add("لم ستم ادخال اي بيان", Severity.Error);
+        if (Type == "model")
+        {
+            var result = await EquipmentService.AddModel(new Model
+            {
+                Name = name
+            });
+            if(result.Success)
+                Snackbar.Add("تم ادخال البيان", Severity.Success);
+            else if (result.Success == false && result.Message == "Duplicated")
+                Snackbar.Add("هذا الطراز موجود بالفعل", Severity.Error);
+
+        }
+        else if (Type == "type")
+        {
+
+            var result = await EquipmentService.AddType(new Type
+                {
+                    Name = name
+                });
+            if (result.Success)
+                Snackbar.Add("تم ادخال البيان", Severity.Success);
+            else if (result.Success == false && result.Message == "Duplicated")
+                Snackbar.Add("هذا النوع موجود بالفعل", Severity.Error);
+
+
+        }
+        else if (Type == "location")
+        {
+
+            var result = await EquipmentService.AddLocation(new Location
+                {
+                    Name = name
+                });
+            if (result.Success)
+                Snackbar.Add("تم ادخال البيان", Severity.Success);
+            else if (result.Success == false && result.Message == "Duplicated")
+                Snackbar.Add("هذا الموقع موجود بالفعل", Severity.Error);
+
+        }
+    }
+
+    void Cancel() => MudDialog.Cancel();
+}

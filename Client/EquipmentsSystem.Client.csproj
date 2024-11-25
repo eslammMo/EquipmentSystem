@@ -1,0 +1,34 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.BlazorWebAssembly">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+	<BlazorWebAssemblyLoadAllGlobalizationData>true</BlazorWebAssemblyLoadAllGlobalizationData>
+
+  </PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="BlazorDownloadFile" Version="2.4.0.2" />
+		<PackageReference Include="BlazorDownloadFileFast" Version="0.2.0" />
+		<PackageReference Include="Blazored.LocalStorage" Version="4.2.0" />
+		<PackageReference Include="FileDownloader" Version="1.2.0" />
+		<PackageReference Include="LibSassBuilder" Version="2.0.2" />
+		<PackageReference Include="Microsoft.AspNetCore.Components.Authorization" Version="6.0.9" />
+		<PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly" Version="6.0.9" />
+		<PackageReference Include="Microsoft.AspNetCore.Components.WebAssembly.DevServer" Version="6.0.9" PrivateAssets="all" />
+		<PackageReference Include="Microsoft.AspNetCore.Mvc.Abstractions" Version="2.2.0" />
+		<PackageReference Include="Microsoft.AspNetCore.Mvc.Core" Version="2.2.5" />
+		<PackageReference Include="Microsoft.AspNetCore.SignalR.Client" Version="6.0.9" />
+		<PackageReference Include="MudBlazor" Version="6.0.16" />
+		<PackageReference Include="MudBlazor.ThemeManager" Version="1.0.7" />
+		<PackageReference Include="Syncfusion.Blazor.RichTextEditor" Version="22.2.5" />
+		<PackageReference Include="Syncfusion.Blazor.Themes" Version="22.2.5" />
+		<PackageReference Include="System.ValueTuple" Version="4.5.0" />
+	</ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Shared\EquipmentsSystem.Shared.csproj" />
+  </ItemGroup>
+
+</Project>

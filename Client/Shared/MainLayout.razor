@@ -1,0 +1,87 @@
+﻿@inherits LayoutComponentBase
+
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager NavigationManager
+
+<MudRTLProvider RightToLeft="true">
+    <div class="page">
+        @if (isUserLoggedIn)
+        {
+            <div class="sidebar">
+                <NavMenu />
+            </div>
+        }
+
+        <main>
+            <article class="content px-4">
+                @Body
+            </article>
+        </main>
+    </div>
+
+    <MudThemeProvider />
+    <MudDialogProvider />
+    <MudSnackbarProvider />
+</MudRTLProvider>
+
+@code {
+    private bool isUserLoggedIn;
+
+    // Inject the custom authentication state provider
+    private CustomAuthStateProvider _customAuthStateProvider;
+
+    protected override async Task OnInitializedAsync()
+    {
+        _customAuthStateProvider = (CustomAuthStateProvider)AuthenticationStateProvider;
+
+        // Update login state when the authentication state changes
+        var authState = await _customAuthStateProvider.GetAuthenticationStateAsync();
+        isUserLoggedIn = authState.User.Identity.IsAuthenticated;
+    }
+
+    // Trigger logout
+    private async Task OnLogoutClick()
+    {
+        _customAuthStateProvider.MarkUserAsLoggedOut();  // Mark user as logged out
+        NavigationManager.NavigateTo("/");  // Navigate to homepage or other page
+    }
+
+    // Optional: You could also listen for authentication state changes here using a state change notification
+}
+@* 
+@inherits LayoutComponentBase
+
+<MudRTLProvider RightToLeft="true">
+    <div class="page">
+        @if (isUserLoggedIn)
+        {
+            <div class="sidebar">
+                <NavMenu />
+            </div>
+        }
+
+        <main>
+            <article class="content px-4">
+                @Body
+            </article>
+        </main>
+    </div>
+
+    <MudThemeProvider />
+    <MudDialogProvider />
+    <MudSnackbarProvider />
+</MudRTLProvider>
+
+@code {
+    private bool isUserLoggedIn;
+    [Inject]
+    private AuthenticationStateProvider AuthenticationStateProvider { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        isUserLoggedIn = authState.User.Identity.IsAuthenticated;
+    }
+}
+
+ *@

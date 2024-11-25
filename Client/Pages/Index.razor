@@ -1,0 +1,597 @@
+﻿@attribute [Authorize]
+@inject MudBlazor.ISnackbar snackbar 
+@using EquipmentsSystem.Client.Services.EquipmentService
+@using EquipmentsSystem.Shared.Models
+@inject IEquipmentService EquipmentService
+@*@inject IDialogService Dialog
+*@@using System.Net.Http.Headers
+@using Microsoft.AspNetCore.Http
+@using System.Net
+@using MudBlazor
+@using System.Security.Claims
+@inject AuthenticationStateProvider AuthenticationStateProvider
+
+@page "/"
+
+<style>
+    /* Alternating row colors */
+    .mud-table-row:nth-child(odd) {
+        background-color: #f5f5f5; /* Light gray for odd rows */
+    }
+
+    .mud-table-row:nth-child(even) {
+        background-color: rgb(178, 152, 204) /* Much Lighter Version */
+        /* Lightened version */
+    }   
+    /* Light Gold Hover Effect for MudTable Rows */
+
+    .mud-table-row:hover {
+        background-color: rgb(255, 223, 120) !important; /* Light Gold */
+        transition: background-color 0.3s ease; /* Smooth transition for color change */
+    }
+
+
+</style>
+
+
+<MudExpansionPanel Text="مرشحات البحث" IsInitiallyExpanded="true">
+    <MudCard Class="mt-2">
+        <MudCardContent>
+        <MudGrid>
+               @*  <MudItem md="3">
+                    <MudAutocomplete @ref="TypeSelect" ResetValueOnEmptyText="resetAuto1" Variant="Variant.Outlined" Margin="Margin.Dense" MaxItems="1000" Dense="true" T="string" Label="النوع" SearchFunc="@TypeListSearch" ValueChanged="value => TypeChanged(value)" />
+                </MudItem>
+                <MudItem md="3">
+                    <MudAutocomplete T="string"
+                                     Label="Select Types"
+                                     SearchFunc="@TypeListSearch1"
+                                     ValueChanged="OnTypeChanged"
+                                     ResetValueOnEmptyText="true" />
+                    <MudChipSet>
+                        @foreach (var type in SelectedTypeList)
+                        {
+                            <MudChip Closeable="true" OnClose="() => RemoveType(type)">
+                                @type
+                            </MudChip>
+                        }
+                    </MudChipSet>
+                </MudItem> *@
+                <MudItem md="3">
+                    <MudSelect @ref="TypeSelect" T="string" Variant="Variant.Outlined" Margin="Margin.Dense" Dense="true" Label="النوع" MultiSelection="true" SelectedValues="SelectedTypeList" SelectedValuesChanged="@( (value) => HandleTypeSelectedValuesChanged(value))">
+                        @foreach (var type in TypeList)
+                        {
+                            <MudSelectItem Value="@type">@type</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+
+                <MudItem md="3">
+                    <MudSelect @ref="ModelSelect" T="string" Variant="Variant.Outlined" Margin="Margin.Dense" Dense="true" Label="الطراز" MultiSelection="true" SelectedValues="SelectedModelList" SelectedValuesChanged="@( (value) => HandleModelSelectedValuesChanged(value))">
+                        @foreach (var type in ModelList)
+                        {
+                            <MudSelectItem Value="@type">@type</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+
+                <MudItem md="3">
+                    <MudSelect @ref="LocationSelect" T="string" Variant="Variant.Outlined" Margin="Margin.Dense" Dense="true" Label="الموقع" MultiSelection="true" SelectedValues="SelectedLocationList" SelectedValuesChanged="@( (value) => HandleLocationSelectedValuesChanged(value))">
+                        @foreach (var type in LocationList)
+                        {
+                            <MudSelectItem Value="@type">@type</MudSelectItem>
+                        }
+                    </MudSelect>
+                </MudItem>
+                <MudItem md="3">
+                    <MudAutocomplete @ref="StatusSelect" ResetValueOnEmptyText="resetAuto4" Variant="Variant.Outlined" Margin="Margin.Dense" MaxItems="1000" Dense="true" T="string" Clearable="true" Label="الحالة" SearchFunc="@StatusListSearch" ValueChanged="value => StatusChanged(value)" />
+                </MudItem>
+                <MudItem md="3">
+                    <MudDateRangePicker @ref="DOPSelect"
+                                        Variant="Variant.Outlined"
+                                        Margin="Margin.Dense"
+                                        Label="تاريخ صرف المعده"
+                                        Clearable="true"
+                                        MinDate="DateTime.MinValue"                                        
+                                        DateRangeChanged="value => OnDateRangeChanged(value)" />
+                </MudItem>
+                
+                <!-- Other filters -->
+                
+                <!-- Name Filter -->
+                <MudItem md="3">
+                    <MudTextField T="string"
+                                  Label="اسم المعدة"
+                                  Variant="Variant.Outlined"
+                                  Margin="Margin.Dense"
+                                  Dense="true"
+                                  @ref="NameField"
+                                  ValueChanged="value => OnNameChanged(value)"
+                                  Clearable="true" />
+                </MudItem>
+
+                <!-- SerialNumber Filter -->
+                <MudItem md="3">
+                    <MudTextField T="string"
+                                  Label="S/N"
+                                  @ref="SNField"
+                                  Variant="Variant.Outlined"
+                                  Margin="Margin.Dense"
+                                  Dense="true"
+                                  ValueChanged="value => OnSNChanged(value)"
+                                  Clearable="true" />
+                </MudItem>
+                <MudItem md="3">
+                        <MudGrid GutterSize="0">
+                    <MudItem md="6">
+                        <MudNumericField Min="0" @ref="MinQuantityFilter" Variant="Variant.Outlined" Margin="Margin.Dense" T="int" Label="الكمية الدنيا" ValueChanged="value => MinQuantityChanged(value)" />
+                    </MudItem>
+                
+                    <MudItem md="6">
+                        <MudNumericField Min="0" @ref="MaxQuantityFilter" Variant="Variant.Outlined" Margin="Margin.Dense" T="int" Label="الكمية القصوى" ValueChanged="value => MaxQuantityChanged(value)" />
+                    </MudItem>
+                    </MudGrid>
+                </MudItem>
+        </MudGrid>
+        </MudCardContent>
+        <MudCardActions>
+            <MudButton Class="m-1" Size="Size.Small" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Clear" Color="Color.Dark" @onclick="ClearSearch">بحث جديد</MudButton>
+            <MudSpacer />
+                @if (selectedItems1.Count() > 0)
+                {
+                    <MudItem   >
+                        <MudText  ><strong> عدد المحدد: @selectedItems1.Count()</strong></MudText>
+                    </MudItem>
+                    <MudSpacer />
+                }
+            <MudButton  Class="m-1" Size="Size.Small" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.QueryStats" Color="Color.Info"> الاجمالي : @count</MudButton>
+        </MudCardActions>
+    </MudCard>
+</MudExpansionPanel>
+<MudTable T="Equipment" OnRowClick="RowClickEvent" Class="mt-2" @ref="mudTable" CanCancelEdit="true" ServerData="@(new Func<TableState, Task<TableData<Equipment>>>(LoadData))"
+          @bind-SelectedItem="selectedItem1" MultiSelection="true" @bind-SelectedItems="selectedItems1"
+          Dense="true" Striped="true" Hover="true" Bordered="true" HeaderClass="table-head-bordered"
+          Loading="@_loading" LoadingProgressColor="Color.Secondary">
+
+    <ToolBarContent>
+        <MudText Typo="Typo.h6"  Style="font:bold">المعدات</MudText>
+        <MudSpacer />
+        @if (role == "SuperAdmin" || role == "admin")
+        {
+            <MudButton Size="Size.Small" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Add" Color="Color.Success" @onclick="AddEquip">اضافة</MudButton>
+            @*    @if (userRole != "UnitUser")
+        {
+        <MudButton Class="m-1" Size="Size.Small" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.Print" Color="Color.Dark" @onclick="Print">طباعة</MudButton>
+        }
+        *@
+            @*   <MudButton Class="m-1" Size="Size.Small" Variant="Variant.Filled" StartIcon="@Icons.Material.Filled.PictureAsPdf" Color="Color.Error" @onclick="Print">طباعة</MudButton> *@
+            <div style="display: flex; justify-content: center;" class="pa-0.3 rounded-circle">
+                <MudIconButton Size="Size.Large" Icon="@Icons.Material.Filled.PictureAsPdf" Color="Color.Error" Edge="Edge.False" OnClick="Print" />
+            </div>
+        }
+        
+    </ToolBarContent>
+
+    <HeaderContent>
+        <MudTh Style="text-align: center; font-size:larger"><strong>النوع</strong></MudTh>
+        <MudTh Style="text-align: center; font-size:larger"><strong>الطراز</strong></MudTh>
+        <MudTh Style="text-align: center; font-size:larger"><strong>اسم المعدة</strong></MudTh>
+        <MudTh Style="text-align: center; font-size:larger"><strong>S/N</strong></MudTh>
+        <MudTh Style="text-align: center; font-size:larger"><strong>مكان التواجد</strong></MudTh>
+        <MudTh Style="text-align: center; font-size:larger"><strong>الحالة</strong></MudTh>
+        <MudTh Style="text-align: center; font-size:larger"><strong>الكمية</strong></MudTh>
+        @if (role == "SuperAdmin" || role == "admin")
+        {
+            <MudTh Style="text-align: center; font-size:larger"><strong>اجراءات</strong></MudTh>
+        }
+        
+    </HeaderContent>
+
+    <RowTemplate>
+        <MudTd Style="text-align: center;" DataLabel="النوع"><strong>@context.Type.Name</strong></MudTd>
+        <MudTd Style="text-align: center;" DataLabel="الطراز"><strong>@context.Model.Name</strong></MudTd>
+        <MudTd Style="text-align: center;" DataLabel="اسم المعدة"><strong>@context.Name</strong></MudTd>
+        <MudTd Style="text-align: center;" DataLabel="S/N"><strong>@context.SerialNumber</strong></MudTd>
+        <MudTd Style="text-align: center;" DataLabel="مكان التواجد"><strong>@context.Location.Name</strong></MudTd>
+        <MudTd Style="text-align: center;" DataLabel="الحالة"><strong>@context.Status</strong></MudTd>
+        <MudTd Style="text-align: center;" DataLabel="الكمية"><strong>@context.Quantity</strong></MudTd>
+        @if (role == "SuperAdmin" || role == "admin")
+        {
+            <MudTd Style="text-align: center;" DataLabel="اجراءات">
+                <MudTooltip Text="الحذف">
+                    <div style="display: flex; justify-content: center;" class="pa-0.3 rounded-circle">
+                        <MudIconButton Icon="@Icons.Material.Filled.Delete" Color="Color.Error" Edge="Edge.False" OnClick="@(()=>Delete(context))" />
+                    </div>
+                </MudTooltip>
+                @if (!string.IsNullOrEmpty(context.Notes))
+                {
+                    <MudTooltip Text="ملاحظات">
+                        <div style="display: flex; justify-content: center;background-color:lightgreen" class="pa-0.3 rounded-circle">
+                            <MudIconButton Icon="@Icons.Material.Filled.NoteAdd" Color="Color.Info" Edge="Edge.False" OnClick="@(()=>AddNote(context))" />
+                        </div>
+                    </MudTooltip>
+                }
+                else
+                {
+                    <MudTooltip Text="ملاحظات">
+                        <div style="display: flex; justify-content: center; bac" class="pa-0.3 rounded-circle">
+                            <MudIconButton Icon="@Icons.Material.Filled.NoteAdd" Color="Color.Info" Edge="Edge.False" OnClick="@(()=>AddNote(context))" />
+                        </div>
+                    </MudTooltip>
+
+                }
+            </MudTd>
+        }
+        
+    </RowTemplate>
+        <PagerContent>
+    <MudTablePager />
+    </PagerContent>
+</MudTable>
+
+@code
+{
+    private MudTable<Equipment> mudTable;
+    public List<Equipment> equips = new List<Equipment>();
+    public string? sortDirection = "ASC";
+    public string? sortBy = null;
+    public string? Type = null;
+    public string? Model = null;
+    public string? SN = null;
+    public string? Name = null;
+    public string? DOPRange = null;
+    public string? Location = null;
+    public string? Status = null;
+    public int? minQuantity = null;
+    public int? maxQuantity = null;
+    public int? count;
+    private bool _loading = true;
+    private DateRange? dateRange;
+    private MudDateRangePicker DOPSelect;  // Reference to the MudDateRangePicker component
+    private List<string> StatusList = new() { "ممتازة", "جيدة", "مقبولة", "سيئة", "رديئه", };
+    public int? pagesize = 0;
+
+
+
+
+    [Inject] ISnackbar Snackbar { get; set; }
+    [Inject]
+    IDialogService Dialog { get; set; }
+    private HashSet<Equipment> selectedItems1 = new HashSet<Equipment>();
+    private Equipment selectedItem1 = new Equipment();
+    DialogOptions customDialogOptions2 = new DialogOptions()
+        {
+            MaxWidth = MaxWidth.Large,
+            FullWidth = true,
+            DisableBackdropClick = true,
+            NoHeader = true
+        };
+    DialogOptions customDialogOptions = new DialogOptions() { MaxWidth = MaxWidth.Medium, FullWidth = true, NoHeader = true };
+
+    private MudSelect<string> TypeSelect = new MudSelect<string>();
+    private MudSelect<string> ModelSelect = new MudSelect<string>();
+    private MudSelect<string> LocationSelect = new MudSelect<string>();
+    private MudAutocomplete<string> StatusSelect = new MudAutocomplete<string>();
+    private MudTextField<string> NameField;
+    private MudTextField<string> SNField;
+    private MudNumericField<int> MinQuantityFilter;
+    private MudNumericField<int> MaxQuantityFilter;
+
+    private bool resetAuto1 = false;
+    private bool resetAuto2 = false;
+    private bool resetAuto3 = false;
+    private bool resetAuto4 = false;
+
+    string displayName = "";
+    string Rank = "";
+    private string? role;
+    private string? _rank;
+    string displayUser = "";
+    List<string> TypeList = new();
+    List<string> ModelList = new();
+    List<string> LocationList = new();
+    private ClaimsPrincipal _user;
+
+
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        _user = authState.User;
+
+        if (_user.Identity != null && _user.Identity.IsAuthenticated)
+        {
+            displayName = _user.Identity.Name; // Get username
+            Rank = _user.Claims.FirstOrDefault(c => c.Type == "Rank")?.Value; // Get username
+            role = _user.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;  
+        }
+        TypeList = (await EquipmentService.GetTypes()).Data.Select(s => s.Name).ToList();
+        ModelList = (await EquipmentService.GetModels()).Data.Select(s => s.Name).ToList();
+        LocationList = (await EquipmentService.GetLocations()).Data.Select(s => s.Name).ToList();
+
+
+
+        var result = await EquipmentService.GetEquipmentsPagination();
+    }
+
+    public async Task<TableData<Equipment>> LoadData(TableState state)
+    {
+        var response = await EquipmentService.GetEquipmentsPagination(
+            currentPageNumber: (state.Page + 1),
+            pageSize: state.PageSize,
+            Type: Type,
+            Model: Model,
+            SN: SN,
+            Name: Name,
+            DOPRange: dateRange != null ? dateRange.Start.Value.ToString("yyyyMMddHHmmss") + "-" + dateRange.End.Value.ToString("yyyyMMddHHmmss") : null,
+            Location: Location,
+            Status: Status,
+            minQuantity: minQuantity,
+            maxQuantity: maxQuantity
+        );
+        pagesize = state.PageSize;
+        count = response.TotalRecords;
+        InvokeAsync(() =>
+        {
+            StateHasChanged();
+        });
+        _loading = false;
+        return new TableData<Equipment>() { Items = response.Data, TotalItems = response.TotalRecords };
+    }
+
+    private async void RowClickEvent(TableRowClickEventArgs<Equipment> tableRowClickEventArgs)
+    {
+        @if (role == "user")
+            return;
+        var parameters = new DialogParameters();
+        parameters.Add("equip", selectedItem1);
+        var dialog = Dialog.Show<EditEquip>("Edit", parameters, customDialogOptions);
+        var result = await dialog.Result;
+        if (!result.Cancelled)
+        {
+        }
+        StateHasChanged();
+        await mudTable.ReloadServerData();
+    }
+
+    async void ClearSearch()
+    {
+        StateHasChanged();
+
+        Type = null;
+        Model = null;
+        Location = null;
+        TypeSelect.Clear();
+        TypeSelect.Text = "";
+        TypeSelect.Value = "";
+        resetAuto1 = true;
+
+        ModelSelect.Clear();
+        ModelSelect.Text = "";
+        ModelSelect.Value = "";
+        resetAuto2 = true;
+
+        LocationSelect.Clear();
+        LocationSelect.Text = "";
+        LocationSelect.Value = "";
+        resetAuto3 = true;
+
+        selectedItems1.Clear();
+
+        StatusSelect.Clear();
+        StatusSelect.Text = "";
+        StatusSelect.Value = "";
+        Status = null;
+        resetAuto4 = true;
+        DOPSelect.Clear(); 
+        dateRange = null;
+        Name = string.Empty;  // Clear the Name filter
+        SN = string.Empty;  // Clear the SerialNumber filter
+        NameField.Clear();  // Clear Name filter
+        SNField.Clear();  // Clear SerialNumber filter
+
+        minQuantity = 0;
+        maxQuantity = 0;
+        MinQuantityFilter.Text = "0";
+        MinQuantityFilter.Value = 0;
+        MaxQuantityFilter.Text = "0";
+        MaxQuantityFilter.Value = 0;
+
+
+        StateHasChanged();
+        await mudTable.ReloadServerData();
+    }
+    async Task AddEquip()
+    {
+        var parameters = new DialogParameters();
+        Equipment equip = new Equipment();
+        parameters.Add("Type", "Add");
+        parameters.Add("equip", equip);
+        var dialog =  Dialog.Show<AddEquip>("Add", parameters, customDialogOptions);
+        var result = await dialog.Result;
+        StateHasChanged();
+        await mudTable.ReloadServerData();
+    }
+    private async void Delete( Equipment obj)
+    {
+        var parameters = new DialogParameters();
+        parameters.Add("equip", obj);
+        var dialoglist = await Dialog.Show<ConfirmDeleteEquipment>("Edit", parameters).GetReturnValueAsync<List<Equipment>>();
+        mudTable.ReloadServerData();
+        StateHasChanged();
+        //else
+        //{
+        //    Snackbar.Add("لا تملك صلاحية الحذف", Severity.Error);
+        //}
+    }   
+
+    private async Task<IEnumerable<string>> StatusListSearch(string value)
+    {
+
+        return StatusList.Where(x => x.Contains(value, StringComparison.InvariantCultureIgnoreCase)).ToList();
+    }
+    void TypeChanged(string value)
+    {
+        Type = value;
+        mudTable.ReloadServerData();
+    }
+    void ModelChanged(string value)
+    {
+        Model  = value;
+        mudTable.ReloadServerData();
+    }
+    void LocationChanged(string value)
+    {
+        Location = value;
+        mudTable.ReloadServerData();
+    }
+    void StatusChanged(string value)
+    {
+        Status = value;
+        mudTable.ReloadServerData();
+    }
+    private void OnDateRangeChanged(DateRange range)
+    {
+        dateRange = range;
+        mudTable.ReloadServerData();
+    }
+    // ValueChanged handlers for Name and SerialNumber filters
+    private void OnNameChanged(string value)
+    {
+        Name = value;  // Update the Name filter
+        mudTable.ReloadServerData();  // Reload the data to apply the filter
+    }
+
+    private void OnSNChanged(string value)
+    {
+        SN = value;  // Update the SerialNumber filter
+        mudTable.ReloadServerData();  // Reload the data to apply the filter
+    }
+    private void MinQuantityChanged(int? value)
+    {
+        minQuantity = value;
+        mudTable.ReloadServerData();
+    }
+
+    private void MaxQuantityChanged(int? value)
+    {
+        maxQuantity = value;
+        mudTable.ReloadServerData();
+    }
+
+    void AddNote(Equipment equip)
+    {
+        var parameters = new DialogParameters();
+        if (equip.Notes == null)
+            equip.Notes = "";
+        parameters.Add("equipment", equip);
+        DialogOptions LocalcustomDialogOptions = new DialogOptions() { MaxWidth = MaxWidth.Large, FullWidth = true, NoHeader = false };
+        var dialog = Dialog.Show < AddEquipNote> ("Edit", parameters, LocalcustomDialogOptions);
+        StateHasChanged();
+        mudTable.ReloadServerData();
+    }
+    public async Task<List<Equipment>> getDataForPrint()
+    {
+        if (selectedItems1.Count() == pagesize || selectedItems1.Count() == 0)
+        {
+            var result = (await EquipmentService.GetEquipments(Type: Type,
+            Model: Model,
+            SN: SN,
+            Name: Name,
+            DOPRange: dateRange != null ? dateRange.Start.Value.ToString("yyyyMMddHHmmss") + "-" + dateRange.End.Value.ToString("yyyyMMddHHmmss") : null,
+            Location: Location,
+            Status: Status,
+            minQuantity: minQuantity,
+            maxQuantity: maxQuantity)).Data;
+            return result;
+        }
+        else
+            return selectedItems1.ToList();
+    }
+    async void Print()
+    {
+
+        List<Equipment> AllList = await getDataForPrint();
+        if (AllList.Count>500)
+        {
+            Snackbar.Add("لقد تخطيت حاجز الطباعه وهو 500 معدة", Severity.Error);
+            return;
+        }
+        else if(AllList.Count ==0)
+        {
+            Snackbar.Add("لا يوجد معدات مختارة للطباعه", Severity.Error);
+            return;
+        }
+
+        ReportItems reportitems = new ReportItems();
+
+        reportitems.ReportName = "EquipmentReport";
+        reportitems.DataTableName="Equipment";
+        reportitems.Count=(6);
+        reportitems.items.Add("Type");
+        reportitems.items.Add("Model");
+        reportitems.items.Add("Name");
+        reportitems.items.Add("SN");
+        reportitems.items.Add("Location");
+        reportitems.items.Add("Date");
+
+
+
+        foreach (var item in AllList)
+        {
+            reportitems.items.Add(item.Type.Name);
+            reportitems.items.Add(item.Model.Name);
+            reportitems.items.Add(item.Name);
+            reportitems.items.Add(item.SerialNumber);
+            reportitems.items.Add(item.Location.Name);
+            reportitems.items.Add(item.DateOfParche != null ? item.DateOfParche.Value.ToString("dd/MM/yyyy") : string.Empty);
+        }
+        // reportitems.RowsCount = AllList.Count / 6;
+        // reportitems.items.AddRange(officers);
+        // reportitems.items.AddRange(persons);
+
+
+        var parameters = new DialogParameters();
+        parameters.Add("reportitems", reportitems);
+        parameters.Add("IsMultiple", false);
+        var dialog = Dialog.Show<PrintDialogComponent>("Add", parameters);
+        await dialog.Result;
+
+    }
+
+
+    private List<string> SelectedTypeList = new();
+    private List<string> SelectedModelList = new();
+    private List<string> SelectedLocationList = new();
+
+    // Convert selected types to a comma-separated string
+
+    private string GetCommaSeparatedTypes(List<string> list) => string.Join(",", list);
+
+
+    private async Task HandleTypeSelectedValuesChanged(IEnumerable<string> selectedValues)
+    {
+        SelectedTypeList = selectedValues.ToList();
+        Type = GetCommaSeparatedTypes(SelectedTypeList);
+        StateHasChanged();
+        mudTable.ReloadServerData();
+    }
+
+    private async Task HandleModelSelectedValuesChanged(IEnumerable<string> selectedValues)
+    {
+        SelectedModelList = selectedValues.ToList();
+        Model = GetCommaSeparatedTypes(SelectedModelList);
+        StateHasChanged();
+        mudTable.ReloadServerData();
+    }
+
+    private async Task HandleLocationSelectedValuesChanged(IEnumerable<string> selectedValues)
+    {
+        SelectedLocationList = selectedValues.ToList();
+        Location = GetCommaSeparatedTypes(SelectedLocationList);
+        StateHasChanged();
+        mudTable.ReloadServerData();
+    }
+}
+
+

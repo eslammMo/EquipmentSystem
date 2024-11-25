@@ -1,0 +1,116 @@
+﻿@inject ILocalStorageService LocalStorage
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager NavigationManager
+
+@using EquipmentsSystem.Client.Pages
+@using EquipmentsSystem.Shared.Models
+@using System.Security.Claims
+
+<div class="top-row ps-3 navbar navbar-dark">
+    <MudGrid AlignItems="Center">
+        <MudItem md="2" style="text-align: left;">
+            <MudIconButton Size="Size.Large" Icon="@Icons.Material.Filled.Logout" Color="Color.Error" Edge="Edge.False" OnClick="Logout" />
+        </MudItem>
+                <MudItem md="1">
+        </MudItem>
+
+
+        <MudItem md="8">
+            <div style="display: flex; align-items: center; height: 100%;">
+                <a class="navbar-brand" style="margin: 0;font-size:small ;font-weight:bold">@displayUser</a>
+            </div>
+        </MudItem>
+
+    </MudGrid>
+
+
+</div>
+
+<div class="@NavMenuCssClass" @onclick="ToggleNavMenu">
+    <nav class="flex-column">
+        <div class="nav-item px-3">
+            <NavLink class="nav-link" href="" Match="NavLinkMatch.All">
+                <span class="oi oi-wrench" aria-hidden="true"></span> المعدات
+            </NavLink>
+        </div>
+        @if(role == "SuperAdmin")
+        {
+            <div class="nav-item px-3">
+                <NavLink class="nav-link" href="/users" Match="NavLinkMatch.All">
+                    <span class="oi oi-person" aria-hidden="true"></span> المستخدمين
+                </NavLink>
+            </div>
+        }
+
+        @* Add other navigation items here *@
+
+        <!-- Logout button at the end of the menu -->
+        @*         <div class="top-row ps-3 navbar navbar-dark">
+
+        <!-- Logout button -->
+        <div  class="container-fluid">
+        <a class="navbar-brand">تسجيل الخروج</a>
+        <MudIconButton Size="Size.Medium" Icon="@Icons.Material.Filled.Logout" Color="Color.Error" Edge="Edge.False" OnClick="Logout" />
+        </div>
+        </div> *@
+
+
+    </nav>
+</div>
+
+
+@code {
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+    [CascadingParameter]
+    [Inject] ISnackbar Snackbar { get; set; }
+    IDialogService Dialog { get; set; }
+    string displayName = "";
+    string Rank = "";
+    private string? role;
+    private string? _rank;
+    string displayUser = "";
+
+    private bool collapseNavMenu = true;
+    private ClaimsPrincipal _user;
+
+    private string? NavMenuCssClass => collapseNavMenu ? "collapse" : null;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        _user = authState.User;
+
+        if (_user.Identity != null && _user.Identity.IsAuthenticated)
+        {
+            displayName = _user.Identity.Name; // Get username
+            Rank = _user.Claims.FirstOrDefault(c => c.Type == "Rank")?.Value; // Get username
+            role = _user.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
+
+        }
+        if (!string.IsNullOrEmpty(Rank))
+            displayUser = Rank + " / ";
+        displayUser += displayName;
+    }
+
+    private void ToggleNavMenu()
+    {
+        collapseNavMenu = !collapseNavMenu;
+    }
+    private async void AddType(string title)
+    {
+        Console.WriteLine(title);
+        var parameters = new DialogParameters();
+        parameters.Add("Type", title);
+        var dialoglist = await Dialog.Show<AddEquipData>("Edit", parameters).GetReturnValueAsync<List<Equipment>>();
+        // await TypeListSearch();
+        // await ModelListSearch();
+        // await LocationListSearch();
+    }
+
+    private async Task Logout()
+    {
+        await LocalStorage.RemoveItemAsync("authToken");
+        await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        NavigationManager.NavigateTo("", forceLoad: true);
+    }
+}

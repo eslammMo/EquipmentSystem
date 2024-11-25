@@ -1,0 +1,59 @@
+﻿@using EquipmentsSystem.Client.Services.EquipmentService
+@using EquipmentsSystem.Shared.Models
+@inject IEquipmentService EquipmentService
+@using Microsoft.AspNetCore.Http
+@using System.Net
+@using MudBlazor
+
+<EditForm Model="equip" OnValidSubmit="DeleteEquip">
+    <DataAnnotationsValidator></DataAnnotationsValidator>
+    <MudDialog>
+        <TitleContent>
+            <MudText Typo="Typo.h6">
+                <MudIcon Icon="@Icons.Filled.HideSource" Class="mr-3 mb-n1" />
+                حذف معده
+            </MudText>
+        </TitleContent>
+        <DialogContent>
+            <MudText Typo="Typo.h6">
+                @prompt
+            </MudText>
+        </DialogContent>
+        <DialogActions>
+            <MudButton Size="Size.Small" StartIcon="@Icons.Material.Filled.Cancel" Variant="Variant.Filled" Color="Color.Dark" ButtonType="ButtonType.Button" Class="m-1" OnClick="Cancel">الغاء</MudButton>
+            <MudButton Variant="Variant.Filled"  Class="ml-auto" Size="Size.Small" ButtonType="ButtonType.Submit" Color="Color.Error">
+                تأكيد</MudButton>
+        </DialogActions>
+    </MudDialog>
+</EditForm>
+
+@code{
+    [CascadingParameter] MudDialogInstance MudDialog { get; set; }
+    [Inject] ISnackbar Snackbar { get; set; }
+    [Parameter] public Equipment equip { get; set; }
+    [Parameter] public string? Type { get; set; }
+    bool loading = true;
+    private string prompt = string.Empty;
+
+    protected override async Task OnInitializedAsync()
+    {
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        prompt = "هل تريد التأكيد علي حذف هذه المعده ؟";
+        loading = false;
+    }
+
+    async Task DeleteEquip()
+    {
+        //await SoldierService.UpdateSoldier(mapper.Map<Soldier>(soldier));
+
+        //equip.Hidden = true;
+        //await MessageService.UpdateMessage(equip);
+        await EquipmentService.DelteEquipment(equip.Id);
+        MudDialog.Close(DialogResult.Ok("Done"));
+    }
+
+    void Cancel() => MudDialog.Cancel();
+}
